@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Генератор сигналов Mines</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .footer-note {
+            color: #909090;
+            font-size: 10px;
+            margin-top: 15px;
+            text-align: center;
+            opacity: 0.8;
+            padding: 0 15px;
+        }
+        
+        .container {
+            background: #2a2a2a;
+            border-radius: 14px;
+            padding: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(120, 120, 120, 0.4);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-grow: 1;
+            min-height: 250px;
+        }
+        
+        .cell {
+            background: #3a3a3a;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.1);
+            transition: background 0.3s ease;
+            aspect-ratio: 1/1;
+        }
+        
+        .cell.has-content::before {
+            content: '1W';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 900;
+            font-size: clamp(14px, 4vw, 20px);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .signal-btn {
+            background: #3a3a3a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 0;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.5),
+                inset 0 3px 4px rgba(255, 255, 255, 0.1);
+        }
+        
+        .signal-btn:active {
+            transform: translateY(3px);
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.5),
+                inset 0 3px 4px rgba(255, 255, 255, 0.1);
+        }
+        
+        #btnText {
+            background: linear-gradient(to bottom, #4da6ff, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 900;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 5px;
+        }
+        
+        .connecting-text {
+            color: white !important;
+            font-weight: 900;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+        }
+        
+        .active-signal {
+            color: #ff3333 !important;
+            font-weight: 900;
+            text-shadow: 0 0 6px rgba(255, 50, 50, 0.7);
+        }
+        
+        .number-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .num-btn {
+            background: #3a3a3a;
+            color: #d0d0d0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 3px 6px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 5px rgba(0, 0, 0, 0.4),
+                inset 0 3px 4px rgba(255, 255, 255, 0.1);
+        }
+        
+        .num-btn:active {
+            transform: translateY(3px);
+        }
+        
+        .num-btn.active {
+            background: #4a4a4a;
+            box-shadow: 
+                0 0 12px rgba(255, 255, 255, 0.5),
+                inset 0 -3px 5px rgba(0, 0, 0, 0.4),
+                inset 0 3px 4px rgba(255, 255, 255, 0.2);
+        }
+        
+        .star {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #4da6ff, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: 900;
+            text-shadow: 
+                0 0 8px rgba(100, 180, 255, 0.9),
+                0 3px 4px rgba(0, 0, 0, 0.5);
+            animation: starAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+        }
+        
+        .bomb {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #ffaa00, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: 900;
+            text-shadow: 
+                0 0 8px rgba(255, 170, 0, 0.8),
+                0 3px 4px rgba(0, 0, 0, 0.5);
+            animation: bombAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+        }
+        
+        /* Анимации */
+        @keyframes starAppear {
+            0% { transform: scale(0.3); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes bombAppear {
+            0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+            70% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .blinking {
+            animation: blink 1.5s ease infinite;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+                min-height: 450px;
+            }
+            
+            .grid {
+                min-height: 200px;
+            }
+            
+            .signal-btn {
+                padding: 12px 0;
+            }
+            
+            .num-btn {
+                padding: 10px 0;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .container {
+                min-height: 400px;
+            }
+            
+            .grid {
+                min-height: 180px;
+            }
+            
+            #btnText {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container fade-in">
+        <div class="grid" id="gameGrid">
+            <!-- 5x5 grid will be generated by JavaScript -->
+        </div>
+        
+        <button class="signal-btn" id="signalButton">
+            <span id="btnText">ПОЛУЧИТЬ СИГНАЛ</span>
+        </button>
+        
+        <div class="number-buttons">
+            <button class="num-btn" data-bombs="2">2</button>
+            <button class="num-btn active" data-bombs="3">3</button>
+            <button class="num-btn" data-bombs="5">5</button>
+            <button class="num-btn" data-bombs="7">7</button>
+        </div>
+    </div>
+    
+    <div class="footer-note">
+        КОПИРОВАНИЕ ЗАПРЕЩЕНО, СОЗДАТЕЛЬ СИГНАЛОВ: @AI_1WINSIGNAL_BOT
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('gameGrid');
+            const signalButton = document.getElementById('signalButton');
+            const btnText = document.getElementById('btnText');
+            const numButtons = document.querySelectorAll('.num-btn');
+            
+            // Game state
+            let bombCount = 3;
+            let isGenerating = false;
+            
+            // Create 5x5 grid
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell', 'has-content');
+                grid.appendChild(cell);
+            }
+            
+            // Number buttons functionality
+            numButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (isGenerating) return;
+                    
+                    // Remove active class from all buttons
+                    numButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Set bomb count
+                    bombCount = parseInt(button.dataset.bombs);
+                });
+            });
+            
+            // Signal button functionality
+            signalButton.addEventListener('click', function() {
+                if (this.disabled || isGenerating) return;
+                
+                isGenerating = true;
+                
+                // Save original text
+                const originalText = btnText.textContent;
+                
+                // Show connecting message
+                btnText.textContent = 'ИДЕТ ПОДКЛЮЧЕНИЕ...';
+                btnText.className = 'connecting-text blinking';
+                this.disabled = true;
+                
+                // Disable number buttons during generation
+                numButtons.forEach(btn => btn.disabled = true);
+                
+                // Clear all cells immediately
+                clearCells();
+                
+                // After 3 seconds
+                setTimeout(() => {
+                    btnText.classList.remove('blinking');
+                    btnText.textContent = 'СИГНАЛ АКТИВЕН: ';
+                    btnText.className = 'active-signal';
+                    
+                    // Add countdown span
+                    const countdown = document.createElement('span');
+                    countdown.id = 'countdown';
+                    countdown.textContent = '20';
+                    btnText.appendChild(countdown);
+                    
+                    // Generate stars and bombs
+                    generateField(bombCount);
+                    
+                    // Timer countdown
+                    let seconds = 20;
+                    const timer = setInterval(() => {
+                        seconds--;
+                        countdown.textContent = seconds;
+                        
+                        if (seconds <= 0) {
+                            clearInterval(timer);
+                            
+                            // Reset to original state
+                            setTimeout(() => {
+                                btnText.textContent = originalText;
+                                btnText.className = '';
+                                signalButton.disabled = false;
+                                isGenerating = false;
+                                
+                                // Re-enable number buttons
+                                numButtons.forEach(btn => btn.disabled = false);
+                                
+                                // Reset cells to "1W"
+                                resetCells();
+                            }, 500);
+                        }
+                    }, 1000);
+                }, 3000);
+            });
+            
+            // Clear cells content
+            function clearCells() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.classList.remove('has-content');
+                });
+            }
+            
+            // Generate field with specified bomb count
+            function generateField(bombCount) {
+                const cells = document.querySelectorAll('.cell');
+                const totalCells = cells.length;
+                const bombPositions = [];
+                
+                // Generate unique bomb positions
+                while (bombPositions.length < bombCount) {
+                    const pos = Math.floor(Math.random() * totalCells);
+                    if (!bombPositions.includes(pos)) {
+                        bombPositions.push(pos);
+                    }
+                }
+                
+                // Apply bombs and stars
+                cells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        if (bombPositions.includes(index)) {
+                            // Bomb
+                            const bomb = document.createElement('div');
+                            bomb.classList.add('bomb');
+                            bomb.innerHTML = '💣';
+                            cell.appendChild(bomb);
+                        } else {
+                            // Star
+                            const star = document.createElement('div');
+                            star.classList.add('star');
+                            star.innerHTML = '★';
+                            cell.appendChild(star);
+                        }
+                    }, 30 * (index % 5));
+                });
+            }
+            
+            // Reset cells to initial "1W" state
+            function resetCells() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.classList.add('has-content');
+                    
+                    const span = document.createElement('span');
+                    span.textContent = '1W';
+                    cell.appendChild(span);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
